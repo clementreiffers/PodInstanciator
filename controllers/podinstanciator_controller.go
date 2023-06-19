@@ -63,6 +63,16 @@ func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
 				{
 					Name:  instance.Name + "-pod",
 					Image: instance.Spec.ImageName,
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          instance.Spec.Ports[0].PortName,
+							ContainerPort: instance.Spec.Ports[0].PortNumber,
+						},
+						{
+							Name:          instance.Spec.Ports[1].PortName,
+							ContainerPort: instance.Spec.Ports[1].PortNumber,
+						},
+					},
 				},
 			},
 		},
@@ -126,6 +136,7 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	instance := &apiv1alpha1.PodInstanciator{}
 	err := r.Get(ctx, req.NamespacedName, instance)
+
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil

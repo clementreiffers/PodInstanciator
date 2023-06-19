@@ -37,8 +37,22 @@ spec:
             properties:
               imageName:
                 type: string
+              ports:
+                items:
+                  properties:
+                    portName:
+                      type: string
+                    portNumber:
+                      format: int32
+                      type: integer
+                  required:
+                  - portName
+                  - portNumber
+                  type: object
+                type: array
             required:
             - imageName
+            - ports
             type: object
           status:
             description: PodInstanciatorStatus defines the observed state of PodInstanciator

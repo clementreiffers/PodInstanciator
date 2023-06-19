@@ -10,3 +10,8 @@ metadata:
   name: podinstanciator-sample
 spec:
   imageName: "nginx"
+  ports:
+    - portName: "test1"
+      portNumber: 8080
+    - portName: "test2"
+      portNumber: 8081

@@ -23,12 +23,18 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type Port struct {
+	PortName   string `json:"portName"`
+	PortNumber int32  `json:"portNumber"`
+}
+
 // PodInstanciatorSpec defines the desired state of PodInstanciator
 type PodInstanciatorSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	ImageName string `json:"imageName"`
+	Ports     []Port `json:"ports"`
 }
 
 // PodInstanciatorStatus defines the observed state of PodInstanciator
