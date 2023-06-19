@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,11 +93,50 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		},
 	}
 
+	pathType := networkingv1.PathTypePrefix
+	ingress := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance.Name + "-ingress",
+			Namespace: instance.Namespace,
+			Annotations: map[string]string{
+				"nginx.ingress.kubernetes.io/rewrite-target": "/",
+			},
+		},
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: "worker.127.0.0.1.sslip.io",
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									Path:     "/",
+									PathType: &pathType,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: instance.Name + "-svc",
+											Port: networkingv1.ServiceBackendPort{
+												Number: 8080,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 	if err := controllerutil.SetControllerReference(instance, pod, r.Scheme); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if err := controllerutil.SetControllerReference(instance, svc, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := controllerutil.SetControllerReference(instance, ingress, r.Scheme); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -125,15 +165,16 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	// Update the Service object and write the result back if there are any changes
-	//if !reflect.DeepEqual(svc.Spec, foundSvc.Spec) {
-	//	foundSvc.Spec = svc.Spec
-	//	logger.Info("Updating Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
-	//	err = r.Update(context.TODO(), foundSvc)
-	//	if err != nil {
-	//		return ctrl.Result{}, err
-	//	}
-	//}
+	foundIngress := &networkingv1.Ingress{}
+	err = r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: ingress.Namespace}, foundIngress)
+	if err != nil && errors.IsNotFound(err) {
+		logger.Info("Creating a new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", svc.Name)
+		err = r.Create(ctx, ingress)
+		if err != nil {
+			logger.Error(err, "unable to create any Ingresses")
+			return ctrl.Result{}, err
+		}
+	}
 
 	// Pod already exists - don't requeue
 	//logger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", foundPod.Namespace, "Pod.Name", foundPod.Name)
