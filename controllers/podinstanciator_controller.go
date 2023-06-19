@@ -177,7 +177,7 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	foundIngress := &networkingv1.Ingress{}
 	err = r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: ingress.Namespace}, foundIngress)
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Creating a new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", svc.Name)
+		logger.Info("Creating a new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", ingress.Name)
 		err = r.Create(ctx, ingress)
 		if err != nil {
 			logger.Error(err, "unable to create any Ingresses")
