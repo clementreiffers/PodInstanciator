@@ -50,6 +50,7 @@ type PodInstanciatorReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
+
 func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.Log.WithValues("PodInstanciator", req.NamespacedName)
 
@@ -72,32 +73,70 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "container-name",
+					Name:  instance.Name + "-pod",
 					Image: imageName,
 				},
 			},
 		},
 	}
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance.Name + "-svc",
+			Namespace: instance.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:    []corev1.ServicePort{{Port: 8080}},
+			Selector: map[string]string{"app": instance.Name + "-pod"},
+			Type:     "NodePort",
+		},
+	}
+
 	if err := controllerutil.SetControllerReference(instance, pod, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := controllerutil.SetControllerReference(instance, svc, r.Scheme); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	foundPod := &corev1.Pod{}
 	err = r.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, foundPod)
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
+		//logger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
 		err = r.Create(ctx, pod)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		// Pod created successfully - don't requeue
-		return ctrl.Result{}, nil
+		// return ctrl.Result{}, nil
 	} else if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	foundSvc := &corev1.Service{}
+	err = r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, foundSvc)
+	if err != nil && errors.IsNotFound(err) {
+		logger.Info("Creating a new Service", "Svc.Namespace", svc.Namespace, "Svc.Name", svc.Name)
+		err = r.Create(ctx, svc)
+		if err != nil {
+			logger.Error(err, "unable to create any Services")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update the Service object and write the result back if there are any changes
+	//if !reflect.DeepEqual(svc.Spec, foundSvc.Spec) {
+	//	foundSvc.Spec = svc.Spec
+	//	logger.Info("Updating Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
+	//	err = r.Update(context.TODO(), foundSvc)
+	//	if err != nil {
+	//		return ctrl.Result{}, err
+	//	}
+	//}
+
 	// Pod already exists - don't requeue
-	logger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", foundPod.Namespace, "Pod.Name", foundPod.Name)
+	//logger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", foundPod.Namespace, "Pod.Name", foundPod.Name)
 	return ctrl.Result{}, nil
 }
 
