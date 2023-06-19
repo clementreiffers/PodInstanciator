@@ -52,21 +52,8 @@ type PodInstanciatorReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 
-func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.Log.WithValues("PodInstanciator", req.NamespacedName)
-
-	instance := &apiv1alpha1.PodInstanciator{}
-	err := r.Get(ctx, req.NamespacedName, instance)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
-	}
-
-	imageName := instance.Spec.ImageName
-
-	pod := &corev1.Pod{
+func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-pod",
 			Namespace: instance.Namespace,
@@ -75,13 +62,15 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			Containers: []corev1.Container{
 				{
 					Name:  instance.Name + "-pod",
-					Image: imageName,
+					Image: instance.Spec.ImageName,
 				},
 			},
 		},
 	}
+}
 
-	svc := &corev1.Service{
+func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-svc",
 			Namespace: instance.Namespace,
@@ -92,9 +81,11 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			Type:     "NodePort",
 		},
 	}
+}
 
+func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress {
 	pathType := networkingv1.PathTypePrefix
-	ingress := &networkingv1.Ingress{
+	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-ingress",
 			Namespace: instance.Namespace,
@@ -128,6 +119,24 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			},
 		},
 	}
+}
+
+func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.Log.WithValues("PodInstanciator", req.NamespacedName)
+
+	instance := &apiv1alpha1.PodInstanciator{}
+	err := r.Get(ctx, req.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+
+	pod := createPod(instance)
+	svc := createService(instance)
+	ingress := createIngress(instance)
+
 	if err := controllerutil.SetControllerReference(instance, pod, r.Scheme); err != nil {
 		return ctrl.Result{}, err
 	}
