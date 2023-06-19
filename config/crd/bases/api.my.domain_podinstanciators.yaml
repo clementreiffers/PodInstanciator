@@ -35,10 +35,6 @@ spec:
           spec:
             description: PodInstanciatorSpec defines the desired state of PodInstanciator
             properties:
-              foo:
-                description: Foo is an example field of PodInstanciator. Edit podinstanciator_types.go
-                  to remove/update
-                type: string
               imageName:
                 type: string
             required:
