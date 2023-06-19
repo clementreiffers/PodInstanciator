@@ -1,0 +1,12 @@
+apiVersion: api.my.domain/v1alpha1
+kind: PodInstanciator
+metadata:
+  labels:
+    app.kubernetes.io/name: podinstanciator
+    app.kubernetes.io/instance: podinstanciator-sample
+    app.kubernetes.io/part-of: podinstanciater
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: podinstanciater
+  name: podinstanciator-sample
+spec:
+  imageName: "nginx"
