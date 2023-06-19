@@ -53,7 +53,7 @@ type PodInstanciatorReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 
 func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
-	return &corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-pod",
 			Namespace: instance.Namespace,
@@ -63,20 +63,21 @@ func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
 				{
 					Name:  instance.Name + "-pod",
 					Image: instance.Spec.ImageName,
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          instance.Spec.Ports[0].PortName,
-							ContainerPort: instance.Spec.Ports[0].PortNumber,
-						},
-						{
-							Name:          instance.Spec.Ports[1].PortName,
-							ContainerPort: instance.Spec.Ports[1].PortNumber,
-						},
-					},
+					Ports: make([]corev1.ContainerPort, 0, len(instance.Spec.Ports)),
 				},
 			},
 		},
 	}
+
+	for _, port := range instance.Spec.Ports {
+		containerPort := corev1.ContainerPort{
+			Name:          port.PortName,
+			ContainerPort: port.PortNumber,
+		}
+		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, containerPort)
+	}
+
+	return pod
 }
 
 func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
