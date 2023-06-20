@@ -3,10 +3,18 @@
 ![](https://badges.aleen42.com/src/golang.svg)
 ![](https://badges.aleen42.com/src/docker.svg)
 
-
 A Kubernetes Controller that deploys your container into Kubernetes with his own Service and Ingress
 
 ## Overview
+
+1. [Getting Started](#getting-started)
+    1. [Running on the cluster](#running-on-the-cluster)
+    2. [Uninstall CRDs](#uninstall-crds)
+    3. [Undeploy controller](#undeploy-controller)
+    4. [How it works](#how-it-works)
+    5. [Test it out](#test-it-out)
+    6. [Modifying the API definitions](#modifying-the-api-definitions)
+2. [License](#license)
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. 
