@@ -7,10 +7,10 @@ import (
 )
 
 func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
-	return &corev1.Service{
+	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getServiceName(instance),
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:     []corev1.ServicePort{},
@@ -18,4 +18,6 @@ func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
 			ClusterIP: "None",
 		},
 	}
+	svc.SetNamespace(instance.GetNamespace())
+	return svc
 }

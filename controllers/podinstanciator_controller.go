@@ -76,9 +76,14 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	ns := createNamespace(instance)
 	pod := createPod(instance)
 	svc := createService(instance)
 	ingress := createIngress(instance)
+
+	if err := controllerutil.SetControllerReference(instance, ns, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	if err := controllerutil.SetControllerReference(instance, pod, r.Scheme); err != nil {
 		return ctrl.Result{}, err
@@ -89,6 +94,12 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if err := controllerutil.SetControllerReference(instance, ingress, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = applyResource(r, ctx, ns, &corev1.Namespace{})
+	if err != nil {
+		logger.Error(err, "unable to create Namespace")
 		return ctrl.Result{}, err
 	}
 

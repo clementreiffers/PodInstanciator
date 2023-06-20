@@ -35,6 +35,7 @@ type PodInstanciatorSpec struct {
 
 	ImageName string `json:"imageName"`
 	Ports     []Port `json:"ports"`
+	Namespace string `json:"namespace"`
 }
 
 // PodInstanciatorStatus defines the observed state of PodInstanciator

@@ -27,10 +27,10 @@ func createIngressPaths(instance *apiv1alpha1.PodInstanciator) []networkingv1.HT
 }
 
 func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress {
-	return &networkingv1.Ingress{
+	ing := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getIngressName(instance),
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.Namespace,
 			Annotations: map[string]string{
 				"nginx.ingress.kubernetes.io/rewrite-target": "/",
 			},
@@ -48,4 +48,6 @@ func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress 
 			},
 		},
 	}
+	ing.SetNamespace(instance.GetNamespace())
+	return ing
 }

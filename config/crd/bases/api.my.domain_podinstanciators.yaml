@@ -37,6 +37,8 @@ spec:
             properties:
               imageName:
                 type: string
+              namespace:
+                type: string
               ports:
                 items:
                   properties:
@@ -52,6 +54,7 @@ spec:
                 type: array
             required:
             - imageName
+            - namespace
             - ports
             type: object
           status:
