@@ -132,6 +132,18 @@ func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress 
 	}
 }
 
+func createResource(r *PodInstanciatorReconciler, ctx context.Context, resource client.Object, foundResource client.Object) error {
+	err := r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, foundResource)
+	if err != nil && errors.IsNotFound(err) {
+		err = r.Create(ctx, resource)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return err
+}
+
 func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.Log.WithValues("PodInstanciator", req.NamespacedName)
 
@@ -161,44 +173,24 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	foundPod := &corev1.Pod{}
-	err = r.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, foundPod)
-	if err != nil && errors.IsNotFound(err) {
-		//logger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.Create(ctx, pod)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		// Pod created successfully - don't requeue
-		// return ctrl.Result{}, nil
-	} else if err != nil {
+	err = createResource(r, ctx, pod, &corev1.Pod{})
+	if err != nil {
+		logger.Error(err, "unable to create Pod")
+		return ctrl.Result{}, err
+	}
+	err = createResource(r, ctx, svc, &corev1.Service{})
+	if err != nil {
+		logger.Error(err, "unable to create Service")
+		return ctrl.Result{}, err
+	}
+	err = createResource(r, ctx, ingress, &networkingv1.Ingress{})
+	if err != nil {
+		logger.Error(err, "unable to create Ingress")
 		return ctrl.Result{}, err
 	}
 
-	foundSvc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, foundSvc)
-	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Creating a new Service", "Svc.Namespace", svc.Namespace, "Svc.Name", svc.Name)
-		err = r.Create(ctx, svc)
-		if err != nil {
-			logger.Error(err, "unable to create any Services")
-			return ctrl.Result{}, err
-		}
-	}
+	logger.Info("all resources created!")
 
-	foundIngress := &networkingv1.Ingress{}
-	err = r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: ingress.Namespace}, foundIngress)
-	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Creating a new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", ingress.Name)
-		err = r.Create(ctx, ingress)
-		if err != nil {
-			logger.Error(err, "unable to create any Ingresses")
-			return ctrl.Result{}, err
-		}
-	}
-
-	// Pod already exists - don't requeue
-	//logger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", foundPod.Namespace, "Pod.Name", foundPod.Name)
 	return ctrl.Result{}, nil
 }
 
