@@ -7,12 +7,11 @@ import (
 )
 
 func createIngressPaths(instance *apiv1alpha1.PodInstanciator) []networkingv1.HTTPIngressPath {
+	paths := make([]networkingv1.HTTPIngressPath, len(instance.Spec.Ports))
 	pathType := networkingv1.PathTypePrefix
-	var paths []networkingv1.HTTPIngressPath
-	for _, port := range instance.Spec.Ports {
-		path := "/" + port.PortName
-		paths = append(paths, networkingv1.HTTPIngressPath{
-			Path:     path,
+	for i, port := range instance.Spec.Ports {
+		paths[i] = networkingv1.HTTPIngressPath{
+			Path:     "/" + port.PortName,
 			PathType: &pathType,
 			Backend: networkingv1.IngressBackend{
 				Service: &networkingv1.IngressServiceBackend{
@@ -22,7 +21,7 @@ func createIngressPaths(instance *apiv1alpha1.PodInstanciator) []networkingv1.HT
 					},
 				},
 			},
-		})
+		}
 	}
 	return paths
 }

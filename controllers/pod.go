@@ -7,15 +7,14 @@ import (
 )
 
 func createPodPorts(instance *apiv1alpha1.PodInstanciator) []corev1.ContainerPort {
-	var paths []corev1.ContainerPort
-	for _, port := range instance.Spec.Ports {
-		containerPort := corev1.ContainerPort{
+	ports := make([]corev1.ContainerPort, len(instance.Spec.Ports))
+	for i, port := range instance.Spec.Ports {
+		ports[i] = corev1.ContainerPort{
 			Name:          port.PortName,
 			ContainerPort: port.PortNumber,
 		}
-		paths = append(paths, containerPort)
 	}
-	return paths
+	return ports
 }
 
 func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
