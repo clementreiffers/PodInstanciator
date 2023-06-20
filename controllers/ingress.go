@@ -11,11 +11,11 @@ func createIngressPaths(instance *apiv1alpha1.PodInstanciator) []networkingv1.HT
 	pathType := networkingv1.PathTypePrefix
 	for i, port := range instance.Spec.Ports {
 		paths[i] = networkingv1.HTTPIngressPath{
-			Path:     "/" + port.PortName,
+			Path:     getIngressPathName(port),
 			PathType: &pathType,
 			Backend: networkingv1.IngressBackend{
 				Service: &networkingv1.IngressServiceBackend{
-					Name: instance.Name + "-svc",
+					Name: getServiceName(instance),
 					Port: networkingv1.ServiceBackendPort{
 						Number: port.PortNumber,
 					},
@@ -29,7 +29,7 @@ func createIngressPaths(instance *apiv1alpha1.PodInstanciator) []networkingv1.HT
 func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress {
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-ingress",
+			Name:      getIngressName(instance),
 			Namespace: instance.Namespace,
 			Annotations: map[string]string{
 				"nginx.ingress.kubernetes.io/rewrite-target": "/",

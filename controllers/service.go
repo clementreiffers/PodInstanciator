@@ -9,12 +9,12 @@ import (
 func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-svc",
+			Name:      getServiceName(instance),
 			Namespace: instance.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:     []corev1.ServicePort{},
-			Selector:  map[string]string{"app": instance.Name + "-pod"},
+			Selector:  map[string]string{"app": getPodName(instance)},
 			ClusterIP: "None",
 		},
 	}
