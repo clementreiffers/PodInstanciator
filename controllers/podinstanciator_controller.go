@@ -87,9 +87,9 @@ func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
 			Namespace: instance.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:    []corev1.ServicePort{{Port: 8080}},
-			Selector: map[string]string{"app": instance.Name + "-pod"},
-			Type:     "NodePort",
+			Ports:     []corev1.ServicePort{},
+			Selector:  map[string]string{"app": instance.Name + "-pod"},
+			ClusterIP: "None",
 		},
 	}
 }
@@ -112,13 +112,25 @@ func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress 
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
 								{
-									Path:     "/",
+									Path:     "/" + instance.Spec.Ports[0].PortName,
 									PathType: &pathType,
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
 											Name: instance.Name + "-svc",
 											Port: networkingv1.ServiceBackendPort{
-												Number: 8080,
+												Number: instance.Spec.Ports[0].PortNumber,
+											},
+										},
+									},
+								},
+								{
+									Path:     "/" + instance.Spec.Ports[1].PortName,
+									PathType: &pathType,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: instance.Name + "-svc",
+											Port: networkingv1.ServiceBackendPort{
+												Number: instance.Spec.Ports[1].PortNumber,
 											},
 										},
 									},
