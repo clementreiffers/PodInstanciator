@@ -28,7 +28,7 @@ func createIngressPaths(instance *apiv1alpha1.PodInstanciator) []networkingv1.HT
 }
 
 func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress {
-	ingress := &networkingv1.Ingress{
+	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-ingress",
 			Namespace: instance.Namespace,
@@ -49,6 +49,4 @@ func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress 
 			},
 		},
 	}
-
-	return ingress
 }
