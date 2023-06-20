@@ -21,7 +21,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,90 +51,7 @@ type PodInstanciatorReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 
-func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-pod",
-			Namespace: instance.Namespace,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  instance.Name + "-pod",
-					Image: instance.Spec.ImageName,
-					Ports: make([]corev1.ContainerPort, 0, len(instance.Spec.Ports)),
-				},
-			},
-		},
-	}
-
-	for _, port := range instance.Spec.Ports {
-		containerPort := corev1.ContainerPort{
-			Name:          port.PortName,
-			ContainerPort: port.PortNumber,
-		}
-		pod.Spec.Containers[0].Ports = append(pod.Spec.Containers[0].Ports, containerPort)
-	}
-
-	return pod
-}
-
-func createService(instance *apiv1alpha1.PodInstanciator) *corev1.Service {
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-svc",
-			Namespace: instance.Namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{},
-			Selector:  map[string]string{"app": instance.Name + "-pod"},
-			ClusterIP: "None",
-		},
-	}
-}
-
-func createIngress(instance *apiv1alpha1.PodInstanciator) *networkingv1.Ingress {
-	pathType := networkingv1.PathTypePrefix
-	ingress := &networkingv1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-ingress",
-			Namespace: instance.Namespace,
-			Annotations: map[string]string{
-				"nginx.ingress.kubernetes.io/rewrite-target": "/",
-			},
-		},
-		Spec: networkingv1.IngressSpec{
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: "worker.127.0.0.1.sslip.io",
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: []networkingv1.HTTPIngressPath{},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, port := range instance.Spec.Ports {
-		path := "/" + port.PortName
-		ingress.Spec.Rules[0].HTTP.Paths = append(ingress.Spec.Rules[0].HTTP.Paths, networkingv1.HTTPIngressPath{
-			Path:     path,
-			PathType: &pathType,
-			Backend: networkingv1.IngressBackend{
-				Service: &networkingv1.IngressServiceBackend{
-					Name: instance.Name + "-svc",
-					Port: networkingv1.ServiceBackendPort{
-						Number: port.PortNumber,
-					},
-				},
-			},
-		})
-	}
-	return ingress
-}
-
-func createResource(r *PodInstanciatorReconciler, ctx context.Context, resource client.Object, foundResource client.Object) error {
+func applyResource(r *PodInstanciatorReconciler, ctx context.Context, resource client.Object, foundResource client.Object) error {
 	err := r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, foundResource)
 	if err != nil && errors.IsNotFound(err) {
 		err = r.Create(ctx, resource)
@@ -176,17 +92,17 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	err = createResource(r, ctx, pod, &corev1.Pod{})
+	err = applyResource(r, ctx, pod, &corev1.Pod{})
 	if err != nil {
 		logger.Error(err, "unable to create Pod")
 		return ctrl.Result{}, err
 	}
-	err = createResource(r, ctx, svc, &corev1.Service{})
+	err = applyResource(r, ctx, svc, &corev1.Service{})
 	if err != nil {
 		logger.Error(err, "unable to create Service")
 		return ctrl.Result{}, err
 	}
-	err = createResource(r, ctx, ingress, &networkingv1.Ingress{})
+	err = applyResource(r, ctx, ingress, &networkingv1.Ingress{})
 	if err != nil {
 		logger.Error(err, "unable to create Ingress")
 		return ctrl.Result{}, err
