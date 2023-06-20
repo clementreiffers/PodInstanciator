@@ -8,7 +8,12 @@ rules:
     resources:
       - "namespaces"
     verbs:
-      - "create"
+      - create
+      - get
+      - list
+      - delete
+      - update
+      - patch
   - apiGroups:
       - ""
     resources:

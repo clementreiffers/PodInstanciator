@@ -103,16 +103,21 @@ func (r *PodInstanciatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	pod.SetNamespace(instance.Spec.Namespace)
 	err = applyResource(r, ctx, pod, &corev1.Pod{})
 	if err != nil {
 		logger.Error(err, "unable to create Pod")
 		return ctrl.Result{}, err
 	}
+
+	svc.SetNamespace(instance.Spec.Namespace)
 	err = applyResource(r, ctx, svc, &corev1.Service{})
 	if err != nil {
 		logger.Error(err, "unable to create Service")
 		return ctrl.Result{}, err
 	}
+
+	ingress.SetNamespace(instance.Spec.Namespace)
 	err = applyResource(r, ctx, ingress, &networkingv1.Ingress{})
 	if err != nil {
 		logger.Error(err, "unable to create Ingress")

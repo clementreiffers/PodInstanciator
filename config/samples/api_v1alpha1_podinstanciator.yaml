@@ -10,7 +10,7 @@ metadata:
   name: podinstanciator-sample
 spec:
   imageName: "nginx"
-  namespace: "stp-fonctionne"
+  namespace: "st"
   ports:
     - portName: "test1"
       portNumber: 8080

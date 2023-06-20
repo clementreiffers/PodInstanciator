@@ -18,10 +18,10 @@ func createPodPorts(instance *apiv1alpha1.PodInstanciator) []corev1.ContainerPor
 }
 
 func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
-	pod := &corev1.Pod{
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getPodName(instance),
-			Namespace: instance.Spec.Namespace,
+			Namespace: instance.GetNamespace(),
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -33,6 +33,4 @@ func createPod(instance *apiv1alpha1.PodInstanciator) *corev1.Pod {
 			},
 		},
 	}
-	pod.SetNamespace(instance.GetNamespace())
-	return pod
 }
